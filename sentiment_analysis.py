@@ -2,7 +2,9 @@ import re
 import datetime
 import json
 import nltk
+from pymystem3 import Mystem
 
+# Step 1. Clean raw tweets fron links, retweets, special characters, whitespaces 
 lines = open('tweets.txt', "r", encoding='utf-8-sig').read().splitlines()
 with open("cleaned_tweets.txt", 'w+', encoding="utf-8") as cleaned_tweets_file:
     for tweet in lines:
@@ -28,5 +30,12 @@ with open("cleaned_tweets.txt", 'w+', encoding="utf-8") as cleaned_tweets_file:
         if len(tweet) > 0:
             cleaned_tweets_file.write(tweet + '\n')
 
-
+# Step 2. Stemm and lemmartize tweets
+cleaned_tweets = open('cleaned_tweets.txt', "r", encoding='utf-8-sig').read().splitlines()
+with open("lemmatized_tweets.txt", 'w+', encoding="utf-8") as lemmatized_tweets_file:
+m = Mystem()
+for tweet in cleaned_tweets:
+    lemmatized_tweet = m.lemmatize(tweet)
+    lemmatized_tweets_file.write(lemmatized_tweet + '\n')
+    print(lemmatized_tweet)
 
