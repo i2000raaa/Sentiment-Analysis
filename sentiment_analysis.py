@@ -42,7 +42,7 @@ with open("cleaned_tweets.txt", 'w+', encoding="utf-8-sig") as cleaned_tweets_fi
         tweet = tweet.strip()
         if len(tweet) > 0:
             Tweets[tweet_date] = tweet.split(' ')
-    cleaned_tweets_file.write(json.dumps(Tweets))
+    cleaned_tweets_file.write(json.dumps(Tweets, ensure_ascii=False))
 
 print ('Step 1. Clean raw tweets fron links, retweets, special characters, whitespaces finished in ' + str("{0:.2f}".format(time.time() - start))+ ' seconds.') 
 start = time.time()
@@ -53,7 +53,7 @@ with open("lemmatized_tweets.txt", 'w+', encoding="utf-8-sig") as lemmatized_twe
     for tweet_date, tweet in Tweets.items():
         for index, word in enumerate(tweet, start=0):
             tweet[index] = morph.parse(word)[0].normal_form
-    lemmatized_tweets_file.write(json.dumps(Tweets))
+    lemmatized_tweets_file.write(json.dumps(Tweets,  ensure_ascii=False))
 
 print ('Step 2. Stemming and lemmartizing finished in ' + str("{0:.2f}".format(time.time() - start)) + ' seconds.') 
 start = time.time()
@@ -64,7 +64,7 @@ english_stop_words = nltk.corpus.stopwords.words('english')
 with open("tweets_wo_stopwords.txt", 'w+', encoding="utf-8-sig") as tweets_wo_stopwords_file:
     for tweet_date, tweet in Tweets.items():
         Tweets[tweet_date] = [word for word in tweet if word not in russian_stop_words and word not in english_stop_words and len(word) > 0]        
-    tweets_wo_stopwords_file.write(json.dumps(Tweets))
+    tweets_wo_stopwords_file.write(json.dumps(Tweets, ensure_ascii=False))
 
 print ('Step 3. Remove stop russian words finished in ' + str("{0:.2f}".format(time.time() - start)) + ' seconds.') 
 start = time.time()
