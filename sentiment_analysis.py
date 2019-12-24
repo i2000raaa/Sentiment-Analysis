@@ -5,9 +5,13 @@ import json
 import nltk
 from pymystem3 import Mystem
 import pymorphy2
+import codecs
+
+Tweets = {}
+Frequency = {}
+Length = {}
 
 start = time.time()
-Tweets = {}
 
 # Step 1. Clean raw tweets fron links, retweets, special characters, whitespaces 
 lines = open('tweets.txt', "r", encoding='utf-8-sig').read().splitlines()
@@ -56,8 +60,39 @@ start = time.time()
 russian_stop_words = nltk.corpus.stopwords.words('russian')
 with open("tweets_wo_stopwords.txt", 'w+', encoding="utf-8-sig") as tweets_wo_stopwords_file:
     for tweet_date, tweet in Tweets.items():
-        Tweets[tweet_date] = [word for word in tweet if word not in russian_stop_words]        
+        Tweets[tweet_date] = [word for word in tweet if word not in russian_stop_words and len(word) > 0]        
     tweets_wo_stopwords_file.write(json.dumps(Tweets))
 
 print ('Step 3. Remove stop russian words finished in ' + str("{0:.2f}".format(time.time() - start)) + ' seconds.') 
+print(json.dumps(Tweets, indent=2))
+start = time.time()
+
+# Step 4. Words frequency 
+for tweet_date, tweet in Tweets.items():
+    for index, word in enumerate(tweet, start=0):
+        if (word not in Frequency):
+            Frequency[word] = 1
+        else:
+            Frequency[word] = Frequency[word] + 1
+all_words_count = sum(Frequency.values())
+with open("frequency.txt", 'w+', encoding="utf-8-sig") as frequency_file:
+    for word in sorted(Frequency, key=Frequency.get, reverse=True):
+        frequency_file.write(word + ' - ' + str(Frequency[word]) + ' - ' + str("{0:.2f}".format(Frequency[word]/all_words_count*100)) + '%\n')
+
+print ('Step 4. Words frequency finished in ' + str("{0:.2f}".format(time.time() - start)) + ' seconds.') 
+start = time.time()
+
+# Step 5. Tweets length frequency
+for tweet_date, tweet in Tweets.items():
+    count = str(len(tweet))
+    if (count not in Length):
+        Length[count] = 1
+    else:
+        Length[count] = Length[count]+ 1
+all_counts = sum(Length.values())
+with open("tweets_length.txt", 'w+', encoding="utf-8-sig") as frequency_file:
+    for count in sorted(Length, key=Length.get, reverse=True):
+        frequency_file.write(count + ' - ' + str(Length[count]) + ' - ' + str("{0:.2f}".format(Length[count]/all_counts*100)) + '%\n')
+
+print ('Step 5. Tweets length frequency finished in ' + str("{0:.2f}".format(time.time() - start)) + ' seconds.') 
 start = time.time()
