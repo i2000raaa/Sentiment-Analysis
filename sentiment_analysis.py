@@ -14,7 +14,7 @@ Length = {}
 start = time.time()
 
 # Step 1. Clean raw tweets fron links, retweets, special characters, whitespaces 
-lines = open('tweets.txt', "r", encoding='utf-8-sig').read().splitlines()
+lines = open('data.txt', "r", encoding='utf-8-sig').read().splitlines()
 with open("cleaned_tweets.txt", 'w+', encoding="utf-8-sig") as cleaned_tweets_file:
     for tweet in lines:
         # get date
@@ -40,7 +40,7 @@ with open("cleaned_tweets.txt", 'w+', encoding="utf-8-sig") as cleaned_tweets_fi
         tweet = tweet.strip()
         if len(tweet) > 0:
             Tweets[tweet_date] = tweet.split(' ')
-        cleaned_tweets_file.write(json.dumps(Tweets))
+    cleaned_tweets_file.write(json.dumps(Tweets))
 
 print ('Step 1. Clean raw tweets fron links, retweets, special characters, whitespaces finished in ' + str("{0:.2f}".format(time.time() - start))+ ' seconds.') 
 start = time.time()
@@ -51,7 +51,7 @@ with open("lemmatized_tweets.txt", 'w+', encoding="utf-8-sig") as lemmatized_twe
     for tweet_date, tweet in Tweets.items():
         for index, word in enumerate(tweet, start=0):
             tweet[index] = morph.parse(word)[0].normal_form
-        lemmatized_tweets_file.write(json.dumps(Tweets))
+    lemmatized_tweets_file.write(json.dumps(Tweets))
 
 print ('Step 2. Stemming and lemmartizing finished in ' + str("{0:.2f}".format(time.time() - start)) + ' seconds.') 
 start = time.time()
@@ -64,7 +64,6 @@ with open("tweets_wo_stopwords.txt", 'w+', encoding="utf-8-sig") as tweets_wo_st
     tweets_wo_stopwords_file.write(json.dumps(Tweets))
 
 print ('Step 3. Remove stop russian words finished in ' + str("{0:.2f}".format(time.time() - start)) + ' seconds.') 
-print(json.dumps(Tweets, indent=2))
 start = time.time()
 
 # Step 4. Words frequency 
