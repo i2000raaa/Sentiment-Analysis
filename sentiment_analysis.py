@@ -24,9 +24,12 @@ with open("cleaned_tweets.txt", 'w+', encoding="utf-8-sig") as cleaned_tweets_fi
         tweet = re.sub(r'[ ](RT|rt)( @\w*)[: ]', '', tweet)
         tweet = re.sub(r'[ ](RT|rt)', '', tweet)
         # remove tags from tweets
-        tweet = re.sub(r'#[ ]*[A-Za-zA-Яа-яё0-9]*', '', tweet)
+        tweet = re.sub(r'#[ ]*[A-Za-zA-Яа-яё0-9 ]*', '', tweet)
         # remove http* links
         tweet = re.sub(r'http\S+', '', tweet)
+        # remove pic.twitter
+        tweet = re.sub(r'pic.twitter\S+', '', tweet)
+        tweet = re.sub(r'twitter\S+', '', tweet)
         # remove users
         tweet = re.sub(r'@[ ]*[^ \n]*', '', tweet)
         # remove digits
@@ -42,7 +45,7 @@ with open("cleaned_tweets.txt", 'w+', encoding="utf-8-sig") as cleaned_tweets_fi
         tweet = tweet.strip()
         if len(tweet) > 0:
             Tweets[tweet_date] = tweet.split(' ')
-    cleaned_tweets_file.write(json.dumps(Tweets, ensure_ascii=False))
+    cleaned_tweets_file.write(json.dumps(Tweets, ensure_ascii=False, indent=1))
 
 print ('Step 1. Clean raw tweets fron links, retweets, special characters, whitespaces finished in ' + str("{0:.2f}".format(time.time() - start))+ ' seconds.') 
 start = time.time()
@@ -63,7 +66,7 @@ russian_stop_words = nltk.corpus.stopwords.words('russian')
 english_stop_words = nltk.corpus.stopwords.words('english')
 with open("tweets_wo_stopwords.txt", 'w+', encoding="utf-8-sig") as tweets_wo_stopwords_file:
     for tweet_date, tweet in Tweets.items():
-        Tweets[tweet_date] = [word for word in tweet if word not in russian_stop_words and word not in english_stop_words and len(word) > 0]        
+        Tweets[tweet_date] = [word for word in tweet if word not in russian_stop_words and word not in english_stop_words and len(word) > 2]        
     tweets_wo_stopwords_file.write(json.dumps(Tweets, ensure_ascii=False))
 
 print ('Step 3. Remove stop russian words finished in ' + str("{0:.2f}".format(time.time() - start)) + ' seconds.') 
