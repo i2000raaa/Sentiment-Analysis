@@ -23,8 +23,9 @@ with open("cleaned_tweets.txt", 'w+', encoding="utf-8-sig") as cleaned_tweets_fi
         # remove retweets
         tweet = re.sub(r'[ ](RT|rt)( @\w*)[: ]', '', tweet)
         tweet = re.sub(r'[ ](RT|rt)', '', tweet)
-        # remove tags from tweets
-        tweet = re.sub(r'#[ ]*[A-Za-zA-Яа-яё0-9 ]*', '', tweet)
+        # remove tags from tweets 
+        # tweet = re.sub(r'#[ ]*[A-Za-zA-Яа-яё0-9]*', '', tweet)
+        tweet = re.sub(r'#[ ]*[A-Za-zA-Яа-яё0-9://.?=_&]*', '', tweet)
         # remove http* links
         tweet = re.sub(r'http\S+', '', tweet)
         # remove pic.twitter
@@ -35,12 +36,10 @@ with open("cleaned_tweets.txt", 'w+', encoding="utf-8-sig") as cleaned_tweets_fi
         # remove digits
         tweet = re.sub(r'\d', '', tweet)
         tweet = tweet.strip()
-        # remove retweets
-        tweet = re.sub(r'(RT|rt)( @\w*)&[: ]', '', tweet)
-        # remove special characters
-        tweet = re.sub(r'[!.,@$%^&*()\-_=+\"№;?/`:<>{}\[\]\']', '', tweet)
+        # remove special characters 
+        tweet = re.sub(r'[!.,@$%^&*()\-_=+\"\«\»№;?/`:<>{}\[\]\']', '', tweet)
         # remove ellipsis
-        tweet = re.sub(r'[\.][\.][\.]', '', tweet)
+        tweet = re.sub(r'[\u2026\xa0]', '', tweet)
         # remove whitespaces
         tweet = tweet.strip()
         if len(tweet) > 0:
