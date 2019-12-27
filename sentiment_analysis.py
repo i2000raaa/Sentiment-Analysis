@@ -57,10 +57,14 @@ with open("cleaned_tweets.txt", 'w+', encoding="utf-8-sig") as cleaned_tweets_fi
 print(str("{0:.2f}".format(time.time() - start))+ ' секунд.')
 start = time.time()
 
-# Шаг 1.2 Стемминг и лемматизация
-print ('Шаг 1.2. Стемминг и лемматизация ...')
+# Шаг 1.2 Стемминг и лемматизация. Вспомогательные части речи
+print ('Шаг 1.2. Стемминг и лемматизация. Вспомогательные части речи ...')
 morph = pymorphy2.MorphAnalyzer()    
 with open("lemmatized_tweets.txt", 'w+', encoding="utf-8-sig") as lemmatized_tweets_file:
+    # удалить пустые, короткие и слишком длинные слова
+    for tweet_date, tweet in Tweets.items():
+        Tweets[tweet_date] = [word for word in tweet if len(word) > 4 and len(word) < 16]
+    # привести слова к начальной форме
     for tweet in Tweets.values():
         for index, word in enumerate(tweet, start=0):
             tweet[index] = morph.parse(word)[0].normal_form.lower()
@@ -69,13 +73,17 @@ with open("lemmatized_tweets.txt", 'w+', encoding="utf-8-sig") as lemmatized_twe
 print(str("{0:.2f}".format(time.time() - start)) + ' секунд.')
 start = time.time()
 
-# Шаг 1.3 Стоп слова и вспомогательные части речи (слово д.б. больше 4х и меньше 16 символов)
-print ('Шаг 1.3. Стоп слова и вспомогательные части речи ...')
+# Шаг 1.3 Стоп слова, пустые твиты
+print ('Шаг 1.3. Стоп слова, пустые твиты ...')
 russian_stop_words = nltk.corpus.stopwords.words('russian')
 english_stop_words = nltk.corpus.stopwords.words('english')
 with open("tweets_wo_stopwords.txt", 'w+', encoding="utf-8-sig") as tweets_wo_stopwords_file:
     for tweet_date, tweet in Tweets.items():
-        Tweets[tweet_date] = [word for word in tweet if word not in russian_stop_words and word not in english_stop_words and len(word) > 4 and len(word) < 16]
+        Tweets[tweet_date] = [word for word in tweet if word not in russian_stop_words and word not in english_stop_words]
+    # удалить пустые твиты
+    empty_tweet_keys = [key for key in Tweets if len(Tweets[key])==0 ]
+    for key in empty_tweet_keys:
+        del Tweets[key]
     tweets_wo_stopwords_file.write(json.dumps(Tweets, ensure_ascii=False))
 
 print(str("{0:.2f}".format(time.time() - start)) + ' секунд.')
@@ -241,6 +249,7 @@ plt.title('Rule 3')
 plt.bar(labels, values)
 
 plt.show()
+
 print(str("{0:.2f}".format(time.time() - start)) + ' секунд.')
 start = time.time()
 
