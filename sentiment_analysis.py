@@ -45,10 +45,11 @@ with open("cleaned_tweets.txt", 'w+', encoding="utf-8-sig") as cleaned_tweets_fi
         tweet = tweet.strip()
         if len(tweet) > 0:
             # секунды, если несколько твитов в одну минуту
-            seconds = 0
-            while tweet_date + ':' + '{:02d}'.format(seconds) in Tweets:
-                seconds = seconds + 1
-            tweet_date = tweet_date + ':' + '{:02d}'.format(seconds)
+            tweet_date = tweet_date + ':00.000'
+            t = datetime.datetime.strptime(tweet_date, '%Y-%m-%d %H:%M:%S.%f')
+            while tweet_date in Tweets:
+                t = t + datetime.timedelta(milliseconds=1)
+                tweet_date = t.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
             # сохраняем в словарь как массив слов с ключом дата - время
             Tweets[tweet_date] = tweet.split(' ')
     # ensure_ascii=False для вывода руских букв в виде символов а не кодов
@@ -184,21 +185,22 @@ for tweet_date, tweet in Tweets.items():
     # Правило 1. Абсолютная оценка
     if estimation < t_low:
         count_bad += 1
-        Statistics[tweet_date] = -1
     elif estimation > t_up:
         count_good += 1
-        Statistics[tweet_date] = 1
     else:
         count_neutral += 1
-        Statistics[tweet_date] = 0
+
 
     # Правило 2. Взвешенные доли
     if 0.1 < estimation / words_count:
         count_good_2 += 1
+        Statistics[tweet_date] = 1
     elif -0.1 <= estimation / words_count <= 0.1:
         count_neutral_2 += 1
+        Statistics[tweet_date] = 0
     elif -0.1 > estimation / words_count:
         count_bad_2 += 1
+        Statistics[tweet_date] = -1
 
     # Правило 3.
     part = int(words_count / 3)
@@ -210,6 +212,9 @@ for tweet_date, tweet in Tweets.items():
         count_neutral_3 += 1
 
 tweets_count = len(Tweets)
+with open("statistics.txt", 'w+', encoding="utf-8-sig") as statistics_file:
+    statistics_file.write(json.dumps(Statistics, ensure_ascii=False))
+
 with open("classification.txt", 'w+', encoding="utf-8-sig") as classification_file:
     classification_file.write('Rule 1\n')
     classification_file.write('Good - ' + str(count_good) + ' - ' + str("{0:.2f}".format(count_good / tweets_count*100)) + '%\n' )
@@ -268,7 +273,7 @@ for tweet_date, tweet in Tweets.items():
                 else:
                     PositiveAdj[word] = PositiveAdj[word] + 1
 all_tweets_count = len(Tweets)
-with open("adjectives.txt.", 'w+', encoding="utf-8-sig") as adjectives_file:
+with open("adjectives.txt", 'w+', encoding="utf-8-sig") as adjectives_file:
     limit = 0
     adjectives_file.write('Top - 5 Positive: \n')
     for word in sorted(PositiveAdj, key=PositiveAdj.get, reverse=True):
@@ -291,8 +296,53 @@ start = time.time()
 
 #6. Оценить распределение положительных/отрицательных/нейтральных твитов по времени.
 print ('Шаг 6. Оценить распределение положительных/отрицательных/нейтральных твитов по времени ... ')
+t0 = 0 # начало интервала
+t1 = 0 # конец интервала
+count_all = 0
+i_all= 0
+i_good = 0
+i_neutral = 0
+i_bad = 0
 
+TimeStatistics = {}
 
+for tweet_date_str in sorted(Statistics.keys()):
+    tweet_datetime = datetime.datetime.strptime(tweet_date_str, '%Y-%m-%d %H:%M:%S.%f')
+    if Statistics[tweet_date_str] == 1:
+        i_good += 1
+    if Statistics[tweet_date_str] == -1:
+        i_bad += 1
+    if Statistics[tweet_date_str] == 0:
+        i_neutral +=1
+    i_all += 1
+    if t0 == 0:
+        t0 = tweet_datetime
+        t1 = t0 + datetime.timedelta(minutes=30)
+    elif tweet_datetime > t1:
+        key = t0.strftime('%Y-%m-%d %H:%M') + " - " + t1.strftime('%H:%M')
+        count_all += i_all
+        TimeStatistics[key] = [count_all, round(i_good/i_all, 4) , round(i_neutral/i_all, 4), round(i_bad/i_all, 4)]
+        t0 = t1
+        t1 = t0 + datetime.timedelta(minutes=10)
+        i_all= 0
+        i_good = 0
+        i_neutral = 0
+        i_bad = 0
+
+with open("hours.txt", 'w+', encoding="utf-8-sig") as hours_file:
+    hours_file.write(json.dumps(TimeStatistics, ensure_ascii=False))
+
+# извлечение данных для графиков
+labels = [*TimeStatistics.keys()]
+labels = [label[9:] for label in labels]
+values = [*TimeStatistics.values()]
+count = [value[0] for value in values]
+good = [value[1] for value in values]
+neutral = [value[2] for value in values]
+bad = [value[3] for value in values]
+
+plt.bar(labels, count)
+plt.show()
 
 print(str("{0:.2f}".format(time.time() - start)) + ' секунд.')
 start = time.time()
