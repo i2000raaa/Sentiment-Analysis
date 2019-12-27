@@ -3,7 +3,7 @@ import datetime
 import time
 import json
 import nltk
-from pymystem3 import Mystem
+#from pymystem3 import Mystem
 import pymorphy2
 import codecs
 
@@ -100,3 +100,28 @@ with open("tweets_length.txt", 'w+', encoding="utf-8-sig") as frequency_file:
 
 print ('Step 5. Tweets length frequency finished in ' + str("{0:.2f}".format(time.time() - start)) + ' seconds.') 
 start = time.time()
+
+# Step 6. Negative / Positive words
+# https://www.kaggle.com/rtatman/sentiment-lexicons-for-81-languages/data
+negative_words_list = open('negative_words_ru.txt', "r", encoding='utf-8-sig').read().splitlines()
+positive_words_list = open('positive_words_ru.txt', "r", encoding='utf-8-sig').read().splitlines()
+# make 2 dictionaries for fast search
+negative_words = {}
+positive_words = {}
+for word in negative_words_list:
+    negative_words [word] = -1
+for word in positive_words_list:
+    positive_words [word] = 1
+
+for word, count in Frequency:
+    Frequency.update([(word, [count, 0])])
+    if word in negative_words: 
+        Frequency.update([(word, [count, -1])])
+    if word in positive_words: 
+        Frequency.update([(word, [count, 1])])
+
+with open("frequency_sentiments.txt", 'w+', encoding="utf-8-sig") as frequency_sentiments_file:
+    frequency_sentiments_file.write(json.dumps(Frequency,  ensure_ascii=False))
+     
+        
+        
