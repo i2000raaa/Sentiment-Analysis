@@ -10,10 +10,13 @@ import codecs
 Tweets = {}
 Frequency = {}
 Length = {}
+Estimations = {}
 
 start = time.time()
 
-# Step 1. Clean raw tweets fron links, retweets, special characters, whitespaces 
+# 1. Подготовка и обработка данных.
+# Шаг 1.1 Специфические конструкции, присущие твитам. Ссылки. Цифры, знаки препинания, специальные символы ($,%,-).
+print ('Шаг 1.1 Специфические конструкции, присущие твитам. Ссылки. Цифры, знаки препинания, специальные символы ($,%,-) ...')
 lines = open('data.txt', "r", encoding='utf-8-sig').read().splitlines()
 with open("cleaned_tweets.txt", 'w+', encoding="utf-8-sig") as cleaned_tweets_file:
     for tweet in lines:
@@ -46,35 +49,38 @@ with open("cleaned_tweets.txt", 'w+', encoding="utf-8-sig") as cleaned_tweets_fi
             Tweets[tweet_date] = tweet.split(' ')
     cleaned_tweets_file.write(json.dumps(Tweets, ensure_ascii=False, indent=1))
 
-print ('Step 1. Clean raw tweets fron links, retweets, special characters, whitespaces finished in ' + str("{0:.2f}".format(time.time() - start))+ ' seconds.') 
+print(str("{0:.2f}".format(time.time() - start))+ ' секунд.')
 start = time.time()
 
-# Step 2. Stemmeing and lemmartizing
+# Шаг 1.2 Стемминг и лемматизация
+print ('Шаг 1.2. Стемминг и лемматизация ...')
 morph = pymorphy2.MorphAnalyzer()    
 with open("lemmatized_tweets.txt", 'w+', encoding="utf-8-sig") as lemmatized_tweets_file:
-    for tweet_date, tweet in Tweets.items():
+    for tweet in Tweets.values():
         for index, word in enumerate(tweet, start=0):
-            tweet[index] = morph.parse(word)[0].normal_form
+            tweet[index] = morph.parse(word)[0].normal_form.lower()
     lemmatized_tweets_file.write(json.dumps(Tweets,  ensure_ascii=False))
 
-print ('Step 2. Stemming and lemmartizing finished in ' + str("{0:.2f}".format(time.time() - start)) + ' seconds.') 
+print(str("{0:.2f}".format(time.time() - start)) + ' секунд.')
 start = time.time()
 
-# Step 3. Remove stop russian words
+# Шаг 1.3 Стоп слова и вспомогательные части речи (слово д.б. больше 4х и меньше 16 символов)
+print ('Шаг 1.3. Стоп слова и вспомогательные части речи ...')
 russian_stop_words = nltk.corpus.stopwords.words('russian')
 english_stop_words = nltk.corpus.stopwords.words('english')
 with open("tweets_wo_stopwords.txt", 'w+', encoding="utf-8-sig") as tweets_wo_stopwords_file:
     for tweet_date, tweet in Tweets.items():
-        Tweets[tweet_date] = [word for word in tweet if word not in russian_stop_words and word not in english_stop_words and len(word) > 2]        
+        Tweets[tweet_date] = [word for word in tweet if word not in russian_stop_words and word not in english_stop_words and len(word) > 4 and len(word) < 16]
     tweets_wo_stopwords_file.write(json.dumps(Tweets, ensure_ascii=False))
 
-print ('Step 3. Remove stop russian words finished in ' + str("{0:.2f}".format(time.time() - start)) + ' seconds.') 
+print(str("{0:.2f}".format(time.time() - start)) + ' секунд.')
 start = time.time()
 
-# Step 4. Words frequency 
-for tweet_date, tweet in Tweets.items():
+# Шаг 2. Частотный анализ.
+print ('Шаг 2. Частотный анализ ... ')
+for tweet in Tweets.values():
     for index, word in enumerate(tweet, start=0):
-        if (word not in Frequency):
+        if word not in Frequency:
             Frequency[word] = 1
         else:
             Frequency[word] = Frequency[word] + 1
@@ -83,13 +89,9 @@ with open("frequency.txt", 'w+', encoding="utf-8-sig") as frequency_file:
     for word in sorted(Frequency, key=Frequency.get, reverse=True):
         frequency_file.write(word + ' - ' + str(Frequency[word]) + ' - ' + str("{0:.2f}".format(Frequency[word]/all_words_count*100)) + '%\n')
 
-print ('Step 4. Words frequency finished in ' + str("{0:.2f}".format(time.time() - start)) + ' seconds.') 
-start = time.time()
-
-# Step 5. Tweets length frequency
 for tweet_date, tweet in Tweets.items():
     count = str(len(tweet))
-    if (count not in Length):
+    if count not in Length:
         Length[count] = 1
     else:
         Length[count] = Length[count]+ 1
@@ -98,30 +100,93 @@ with open("tweets_length.txt", 'w+', encoding="utf-8-sig") as frequency_file:
     for count in sorted(Length, key=Length.get, reverse=True):
         frequency_file.write(count + ' - ' + str(Length[count]) + ' - ' + str("{0:.2f}".format(Length[count]/all_counts*100)) + '%\n')
 
-print ('Step 5. Tweets length frequency finished in ' + str("{0:.2f}".format(time.time() - start)) + ' seconds.') 
+print(str("{0:.2f}".format(time.time() - start)) + ' секунд.')
 start = time.time()
 
-# Step 6. Negative / Positive words
+#3. Эмпирическая оценка/разметка отдельных слов.
 # https://www.kaggle.com/rtatman/sentiment-lexicons-for-81-languages/data
+print ('Шаг 3. Эмпирическая оценка/разметка отдельных слов ...')
 negative_words_list = open('negative_words_ru.txt', "r", encoding='utf-8-sig').read().splitlines()
 positive_words_list = open('positive_words_ru.txt', "r", encoding='utf-8-sig').read().splitlines()
-# make 2 dictionaries for fast search
 negative_words = {}
 positive_words = {}
 for word in negative_words_list:
-    negative_words [word] = -1
+    negative_words[word] = -1
 for word in positive_words_list:
-    positive_words [word] = 1
+    positive_words[word] = 1
 
-for word, count in Frequency:
-    Frequency.update([(word, [count, 0])])
-    if word in negative_words: 
-        Frequency.update([(word, [count, -1])])
-    if word in positive_words: 
-        Frequency.update([(word, [count, 1])])
+for word, count in Frequency.items():
+    if count > 2:  # выбираем только слова которые встречаются больше 2х раз
+        if word in negative_words:
+            Estimations[word] = -1
+        elif word in positive_words:
+            Estimations[word] = 1
+        else:
+            Estimations[word] = 0
+with open("estimations.txt", 'w+', encoding="utf-8-sig") as estimations_file:
+    estimations_file.write(json.dumps(Estimations,  ensure_ascii=False))
 
-with open("frequency_sentiments.txt", 'w+', encoding="utf-8-sig") as frequency_sentiments_file:
-    frequency_sentiments_file.write(json.dumps(Frequency,  ensure_ascii=False))
-     
-        
+print(str("{0:.2f}".format(time.time() - start)) + ' секунд.')
+start = time.time()
+
+#4. Правила классификации. Оценка твитов. Сравнительный анализ.
+print('Шаг 4. Правила классификации. Оценка твитов. Сравнительный анализ ...')
+for tweet_date, tweet in Tweets.items():
+    estimation = 0
+    for index, word in enumerate(tweet, start=0):
+        l = len(tweet)
+        if word in Estimations:
+            estimation = estimation + Estimations[word]
+
+print(str("{0:.2f}".format(time.time() - start)) + ' секунд.')
+start = time.time()
+
+#5. Части речи.
+print ('Шаг 5. Части речи ... ')
+PositiveAdj = {}
+NegativeAdj = {}
+for tweet_date, tweet in Tweets.items():
+    estimation = 0
+    for index, word in enumerate(tweet, start=0):
+        tag = str(morph.parse(word)[0].tag.POS)
+        if tag == "ADJF" or tag == "ADJS":
+            if word in Estimations and Estimations[word] == -1:
+                if word not in NegativeAdj:
+                    NegativeAdj[word] = 1
+                else:
+                    NegativeAdj[word] = NegativeAdj[word] + 1
+            elif word in Estimations and Estimations[word] == 1:
+                if word not in PositiveAdj:
+                    PositiveAdj[word] = 1
+                else:
+                    PositiveAdj[word] = PositiveAdj[word] + 1
+all_tweets_count = len(Tweets)
+with open("adjectives.txt.", 'w+', encoding="utf-8-sig") as adjectives_file:
+    limit = 0
+    adjectives_file.write('Top - 5 Positive: \n')
+    for word in sorted(PositiveAdj, key=PositiveAdj.get, reverse=True):
+        if limit < 5:
+            adjectives_file.write(word + ' - ' + str(PositiveAdj[word]) + ' - ' + str("{0:.2f}".format(PositiveAdj[word] / all_tweets_count * 100)) + '%\n')
+        else:
+            break
+        limit = limit + 1
+    adjectives_file.write('Top - 5 Negative: \n')
+    limit = 0
+    for word in sorted(NegativeAdj, key=NegativeAdj.get, reverse=True):
+        if limit < 5:
+            adjectives_file.write(word + ' - ' + str(NegativeAdj[word]) + ' - ' + str("{0:.2f}".format(NegativeAdj[word] / all_tweets_count * 100)) + '%\n')
+        else:
+            break
+        limit = limit + 1
+
+print(str("{0:.2f}".format(time.time() - start)) + ' секунд.')
+start = time.time()
+
+#6. Оценить распределение положительных/отрицательных/нейтральных твитов по времени.
+print ('Шаг 6. Оценить распределение положительных/отрицательных/нейтральных твитов по времени ... ')
+
+
+print(str("{0:.2f}".format(time.time() - start)) + ' секунд.')
+start = time.time()
+
         
