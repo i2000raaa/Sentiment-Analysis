@@ -8,9 +8,6 @@ import pymorphy2
 import codecs
 
 Tweets = {}
-Frequency = {}
-Length = {}
-Estimations = {}
 
 start = time.time()
 
@@ -20,33 +17,34 @@ print ('Шаг 1.1 Специфические конструкции, прису
 lines = open('data.txt', "r", encoding='utf-8-sig').read().splitlines()
 with open("cleaned_tweets.txt", 'w+', encoding="utf-8-sig") as cleaned_tweets_file:
     for tweet in lines:
-        # get date
-        tweet_date = tweet[:16]  # tweet_date = datetime.datetime.strptime(tweet_date_str, '%Y-%m-%d %H:%M').date()
+        # дата
+        tweet_date = tweet[:16]
         tweet = tweet [16:]
-        # remove retweets
+        # ретвиты
         tweet = re.sub(r'[ ](RT|rt)( @\w*)[: ]', '', tweet)
         tweet = re.sub(r'[ ](RT|rt)', '', tweet)
-        # remove tags from tweets 
-        # tweet = re.sub(r'#[ ]*[A-Za-zA-Яа-яё0-9]*', '', tweet)
+        # хэштеги
         tweet = re.sub(r'#[ ]*[A-Za-zA-Яа-яё0-9://.?=_&]*', '', tweet)
-        # remove http* links
+        # гиперссылки
         tweet = re.sub(r'http\S+', '', tweet)
-        # remove pic.twitter
+        # ссылки на твиттер
         tweet = re.sub(r'pic.twitter\S+', '', tweet)
         tweet = re.sub(r'twitter\S+', '', tweet)
-        # remove users
+        # пользователи
         tweet = re.sub(r'@[ ]*[^ \n]*', '', tweet)
-        # remove digits
+        # цифры
         tweet = re.sub(r'\d', '', tweet)
         tweet = tweet.strip()
-        # remove special characters 
+        # спец. символы
         tweet = re.sub(r'[!.,@$%^&*()\-_=+\"\«\»№;?/`:<>{}\[\]\']', '', tweet)
-        # remove ellipsis
+        # троеточие и хитрый пробел
         tweet = re.sub(r'[\u2026\xa0]', '', tweet)
-        # remove whitespaces
+        # лишние пробелы
         tweet = tweet.strip()
         if len(tweet) > 0:
+            # сохраняем в словарь как массив слов с ключом дата - время
             Tweets[tweet_date] = tweet.split(' ')
+    # ensure_ascii=False для вывода руских букв в виде символов а не кодов
     cleaned_tweets_file.write(json.dumps(Tweets, ensure_ascii=False, indent=1))
 
 print(str("{0:.2f}".format(time.time() - start))+ ' секунд.')
@@ -78,6 +76,7 @@ start = time.time()
 
 # Шаг 2. Частотный анализ.
 print ('Шаг 2. Частотный анализ ... ')
+Frequency = {}
 for tweet in Tweets.values():
     for index, word in enumerate(tweet, start=0):
         if word not in Frequency:
@@ -87,18 +86,19 @@ for tweet in Tweets.values():
 all_words_count = sum(Frequency.values())
 with open("frequency.txt", 'w+', encoding="utf-8-sig") as frequency_file:
     for word in sorted(Frequency, key=Frequency.get, reverse=True):
-        frequency_file.write(word + ' - ' + str(Frequency[word]) + ' - ' + str("{0:.2f}".format(Frequency[word]/all_words_count*100)) + '%\n')
+        frequency_file.write(word + ' - ' + str(Frequency[word]) + ' - ' + str("{0:.5f}".format(Frequency[word]/all_words_count*100)) + '%\n')
 
+Length = {}
 for tweet_date, tweet in Tweets.items():
-    count = str(len(tweet))
-    if count not in Length:
-        Length[count] = 1
+    length = str(len(tweet))
+    if length not in Length:
+        Length[length] = 1
     else:
-        Length[count] = Length[count]+ 1
+        Length[length] = Length[length]+ 1
 all_counts = sum(Length.values())
 with open("tweets_length.txt", 'w+', encoding="utf-8-sig") as frequency_file:
-    for count in sorted(Length, key=Length.get, reverse=True):
-        frequency_file.write(count + ' - ' + str(Length[count]) + ' - ' + str("{0:.2f}".format(Length[count]/all_counts*100)) + '%\n')
+    for length in sorted(Length, key=Length.get, reverse=True):
+        frequency_file.write(length + ' - ' + str(Length[length]) + ' - ' + str("{0:.2f}".format(Length[length]/all_counts*100)) + '%\n')
 
 print(str("{0:.2f}".format(time.time() - start)) + ' секунд.')
 start = time.time()
@@ -115,6 +115,7 @@ for word in negative_words_list:
 for word in positive_words_list:
     positive_words[word] = 1
 
+Estimations = {}
 for word, count in Frequency.items():
     if count > 2:  # выбираем только слова которые встречаются больше 2х раз
         if word in negative_words:
@@ -146,7 +147,6 @@ print ('Шаг 5. Части речи ... ')
 PositiveAdj = {}
 NegativeAdj = {}
 for tweet_date, tweet in Tweets.items():
-    estimation = 0
     for index, word in enumerate(tweet, start=0):
         tag = str(morph.parse(word)[0].tag.POS)
         if tag == "ADJF" or tag == "ADJS":
@@ -184,7 +184,7 @@ start = time.time()
 
 #6. Оценить распределение положительных/отрицательных/нейтральных твитов по времени.
 print ('Шаг 6. Оценить распределение положительных/отрицательных/нейтральных твитов по времени ... ')
-
+# tweet_date = datetime.datetime.strptime(tweet_date_str, '%Y-%m-%d %H:%M').date()
 
 print(str("{0:.2f}".format(time.time() - start)) + ' секунд.')
 start = time.time()
