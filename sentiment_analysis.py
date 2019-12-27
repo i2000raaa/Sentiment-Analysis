@@ -153,6 +153,7 @@ count_bad = 0
 count_good = 0
 count_neutral = 0
 Statistics = {}
+Classification = {}
 
 count_good_2 = 0
 count_bad_2 = 0
@@ -165,18 +166,13 @@ count_good_3 = 0
 count_bad_3 = 0
 count_neutral_3 = 0
 
-classification = {}
 law1 = 0
 law2 = 0
-sign = 1
-portion = 1
-
 
 for tweet_date, tweet in Tweets.items():
     estimation = 0
-    # считаем простую сумму оценок слов твита
     for index, word in enumerate(tweet, start=0):
-        l = len(tweet)
+        words_count = len(tweet)
         if word in Estimations:
             estimation = estimation + Estimations[word]
             if Estimations[word] == 1:
@@ -185,7 +181,7 @@ for tweet_date, tweet in Tweets.items():
                 bad_words_3 += 1
             else:
                 neutral_words_3 = 0
-
+    # Правило 1. Абсолютная оценка
     if estimation < t_low:
         count_bad += 1
         Statistics[tweet_date] = -1
@@ -196,16 +192,16 @@ for tweet_date, tweet in Tweets.items():
         count_neutral += 1
         Statistics[tweet_date] = 0
 
-        #второе правило через долю
-    if 0.1 < estimation / l:
+    # Правило 2. Взвешенные доли
+    if 0.1 < estimation / words_count:
         count_good_2 += 1
-    elif -0.1 <= estimation / l <= 0.1:
+    elif -0.1 <= estimation / words_count <= 0.1:
         count_neutral_2 += 1
-    elif -0.1 > estimation / l:
+    elif -0.1 > estimation / words_count:
         count_bad_2 += 1
 
-    # третье правило через долю
-    part = int(l / 3)
+    # Правило 3.
+    part = int(words_count / 3)
     if good_words_3 >= part:
         count_good_3 += 1
     elif bad_words_3 >= part:
@@ -213,20 +209,20 @@ for tweet_date, tweet in Tweets.items():
     else:
         count_neutral_3 += 1
 
-count_all = len(Tweets)
+tweets_count = len(Tweets)
 with open("classification.txt", 'w+', encoding="utf-8-sig") as classification_file:
     classification_file.write('Rule 1\n')
-    classification_file.write('Good - ' + str(count_good) + ' - ' + str("{0:.2f}".format(count_good / count_all*100)) + '%\n' )
-    classification_file.write('Bad - ' + str(count_bad) + ' - ' + str("{0:.2f}".format(count_bad / count_all * 100)) + '%\n')
-    classification_file.write('Neutral - ' + str(count_neutral) + ' - ' + str("{0:.2f}".format(count_neutral / count_all * 100)) + '%\n')
+    classification_file.write('Good - ' + str(count_good) + ' - ' + str("{0:.2f}".format(count_good / tweets_count*100)) + '%\n' )
+    classification_file.write('Bad - ' + str(count_bad) + ' - ' + str("{0:.2f}".format(count_bad / tweets_count * 100)) + '%\n')
+    classification_file.write('Neutral - ' + str(count_neutral) + ' - ' + str("{0:.2f}".format(count_neutral / tweets_count * 100)) + '%\n')
     classification_file.write('Rule 2\n')
-    classification_file.write('Good - ' + str(count_good_2) + ' - ' + str("{0:.2f}".format(count_good_2 / count_all * 100)) + '%\n')
-    classification_file.write('Bad - ' + str(count_bad_2) + ' - ' + str("{0:.2f}".format(count_bad_2 / count_all * 100)) + '%\n')
-    classification_file.write('Neutral - ' + str(count_neutral_2) + ' - ' + str("{0:.2f}".format(count_neutral_2 / count_all * 100)) + '%\n')
+    classification_file.write('Good - ' + str(count_good_2) + ' - ' + str("{0:.2f}".format(count_good_2 / tweets_count * 100)) + '%\n')
+    classification_file.write('Bad - ' + str(count_bad_2) + ' - ' + str("{0:.2f}".format(count_bad_2 / tweets_count * 100)) + '%\n')
+    classification_file.write('Neutral - ' + str(count_neutral_2) + ' - ' + str("{0:.2f}".format(count_neutral_2 / tweets_count * 100)) + '%\n')
     classification_file.write('Rule 3\n')
-    classification_file.write('Good - ' + str(count_good_3) + ' - ' + str("{0:.2f}".format(count_good_3  / count_all * 100)) + '%\n')
-    classification_file.write('Bad - ' + str(count_bad_3) + ' - ' + str("{0:.2f}".format(count_bad_3 / count_all * 100)) + '%\n')
-    classification_file.write('Neutral - ' + str(count_neutral_3) + ' - ' + str("{0:.2f}".format(count_neutral_3 / count_all * 100)) + '%\n')
+    classification_file.write('Good - ' + str(count_good_3) + ' - ' + str("{0:.2f}".format(count_good_3  / tweets_count * 100)) + '%\n')
+    classification_file.write('Bad - ' + str(count_bad_3) + ' - ' + str("{0:.2f}".format(count_bad_3 / tweets_count * 100)) + '%\n')
+    classification_file.write('Neutral - ' + str(count_neutral_3) + ' - ' + str("{0:.2f}".format(count_neutral_3 / tweets_count * 100)) + '%\n')
 from matplotlib import style
 style.use('seaborn')
 
@@ -295,7 +291,8 @@ start = time.time()
 
 #6. Оценить распределение положительных/отрицательных/нейтральных твитов по времени.
 print ('Шаг 6. Оценить распределение положительных/отрицательных/нейтральных твитов по времени ... ')
-# tweet_date = datetime.datetime.strptime(tweet_date_str, '%Y-%m-%d %H:%M').date()
+
+
 
 print(str("{0:.2f}".format(time.time() - start)) + ' секунд.')
 start = time.time()
