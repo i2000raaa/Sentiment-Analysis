@@ -5,9 +5,9 @@ import json
 import nltk
 #from pymystem3 import Mystem
 import pymorphy2
-import numpy as np
 import matplotlib.pyplot as plt
 import codecs
+from matplotlib import style
 
 Tweets = {}
 
@@ -15,7 +15,7 @@ start = time.time()
 
 # 1. Подготовка и обработка данных.
 # Шаг 1.1 Специфические конструкции, присущие твитам. Ссылки. Цифры, знаки препинания, специальные символы ($,%,-).
-print ('Шаг 1.1 Специфические конструкции, присущие твитам. Ссылки. Цифры, знаки препинания, специальные символы ($,%,-) ...')
+print ('Шаг 1.1 Специфические конструкции: ссылки,цифры, знаки препинания, специальные символы ($,%,-) ...')
 lines = open('data.txt', "r", encoding='utf-8-sig').read().splitlines()
 with open("cleaned_tweets.txt", 'w+', encoding="utf-8-sig") as cleaned_tweets_file:
     for tweet in lines:
@@ -39,7 +39,7 @@ with open("cleaned_tweets.txt", 'w+', encoding="utf-8-sig") as cleaned_tweets_fi
         tweet = tweet.strip()
         # спец. символы
         tweet = re.sub(r'[!.,@$%^&*()\-_=+\"\«\»№;?/`:<>{}\[\]\']', '', tweet)
-        # троеточие и хитрый пробел
+        # троеточие и пробел
         tweet = re.sub(r'[\u2026\xa0]', '', tweet)
         # лишние пробелы
         tweet = tweet.strip()
@@ -52,7 +52,7 @@ with open("cleaned_tweets.txt", 'w+', encoding="utf-8-sig") as cleaned_tweets_fi
                 tweet_date = t.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
             # сохраняем в словарь как массив слов с ключом дата - время
             Tweets[tweet_date] = tweet.split(' ')
-    # ensure_ascii=False для вывода руских букв в виде символов а не кодов
+    # ensure_ascii=False для вывода руских букв в виде символов а не кодов!
     cleaned_tweets_file.write(json.dumps(Tweets, ensure_ascii=False, indent=1))
 
 print(str("{0:.2f}".format(time.time() - start))+ ' секунд.')
@@ -82,7 +82,7 @@ with open("tweets_wo_stopwords.txt", 'w+', encoding="utf-8-sig") as tweets_wo_st
     for tweet_date, tweet in Tweets.items():
         Tweets[tweet_date] = [word for word in tweet if word not in russian_stop_words and word not in english_stop_words]
     # удалить пустые твиты
-    empty_tweet_keys = [key for key in Tweets if len(Tweets[key])==0 ]
+    empty_tweet_keys = [key for key in Tweets if len(Tweets[key])== 0 ]
     for key in empty_tweet_keys:
         del Tweets[key]
     tweets_wo_stopwords_file.write(json.dumps(Tweets, ensure_ascii=False))
@@ -94,7 +94,7 @@ start = time.time()
 print ('Шаг 2. Частотный анализ ... ')
 Frequency = {}
 for tweet in Tweets.values():
-    for index, word in enumerate(tweet, start=0):
+    for index, word in enumerate(tweet, start=0): #кортеж
         if word not in Frequency:
             Frequency[word] = 1
         else:
@@ -110,7 +110,7 @@ for tweet_date, tweet in Tweets.items():
     if length not in Length:
         Length[length] = 1
     else:
-        Length[length] = Length[length]+ 1
+        Length[length] = Length[length] + 1
 all_counts = sum(Length.values())
 with open("tweets_length.txt", 'w+', encoding="utf-8-sig") as frequency_file:
     for length in sorted(Length, key=Length.get, reverse=True):
@@ -211,7 +211,7 @@ for tweet_date, tweet in Tweets.items():
     else:
         count_neutral_3 += 1
 
-tweets_count = len(Tweets)
+tweets_count = len(Tweets) #всего твитов
 with open("statistics.txt", 'w+', encoding="utf-8-sig") as statistics_file:
     statistics_file.write(json.dumps(Statistics, ensure_ascii=False))
 
@@ -228,28 +228,27 @@ with open("classification.txt", 'w+', encoding="utf-8-sig") as classification_fi
     classification_file.write('Good - ' + str(count_good_3) + ' - ' + str("{0:.2f}".format(count_good_3  / tweets_count * 100)) + '%\n')
     classification_file.write('Bad - ' + str(count_bad_3) + ' - ' + str("{0:.2f}".format(count_bad_3 / tweets_count * 100)) + '%\n')
     classification_file.write('Neutral - ' + str(count_neutral_3) + ' - ' + str("{0:.2f}".format(count_neutral_3 / tweets_count * 100)) + '%\n')
-from matplotlib import style
+
 style.use('seaborn')
 
-plt.subplot(1, 3, 1)
+plt.subplot2grid((3, 3), (0, 0))
 labels = ['good', 'bad', 'neutral']
 values = [count_good, count_bad, count_neutral]
 plt.title('Rule 1')
 plt.bar(labels, values)
 
-plt.subplot(1, 3, 2)
+plt.subplot2grid((3, 3), (0, 1))
 labels = ['good', 'bad', 'neutral']
 values = [count_good_2, count_bad_2, count_neutral_2]
 plt.title('Rule 2')
 plt.bar(labels, values)
 
-plt.subplot(1, 3, 3)
+plt.subplot2grid((3, 3), (0, 2))
 labels = ['good', 'bad', 'neutral']
 values = [count_good_3, count_bad_3, count_neutral_3]
 plt.title('Rule 3')
 plt.bar(labels, values)
 
-plt.show()
 
 print(str("{0:.2f}".format(time.time() - start)) + ' секунд.')
 start = time.time()
@@ -317,13 +316,13 @@ for tweet_date_str in sorted(Statistics.keys()):
     i_all += 1
     if t0 == 0:
         t0 = tweet_datetime
-        t1 = t0 + datetime.timedelta(minutes=30)
+        t1 = t0 + datetime.timedelta(minutes=10)
     elif tweet_datetime > t1:
         key = t0.strftime('%Y-%m-%d %H:%M') + " - " + t1.strftime('%H:%M')
         count_all += i_all
         TimeStatistics[key] = [count_all, round(i_good/i_all, 4) , round(i_neutral/i_all, 4), round(i_bad/i_all, 4)]
         t0 = t1
-        t1 = t0 + datetime.timedelta(minutes=10)
+        t1 = t0 + datetime.timedelta(minutes=60)
         i_all= 0
         i_good = 0
         i_neutral = 0
@@ -334,14 +333,43 @@ with open("hours.txt", 'w+', encoding="utf-8-sig") as hours_file:
 
 # извлечение данных для графиков
 labels = [*TimeStatistics.keys()]
-labels = [label[9:] for label in labels]
+#labels = [label[11:] for label in labels]
 values = [*TimeStatistics.values()]
 count = [value[0] for value in values]
 good = [value[1] for value in values]
 neutral = [value[2] for value in values]
 bad = [value[3] for value in values]
 
+# Таблица графиков будет иметь три строки и три столбца (3,3)
+
+# Вывод будет осуществляться в ячейку с координатами (0, 0),
+# то есть 0-ая строка и 0-ой столбец
+# Оси для графика будут занимать две ячейки по горизонтали (colspan = 2)
+# и две ячейки по вертикали (rowspan = 2)
+
+plt.subplot2grid((3, 3), (1, 0), colspan=3)
+plt.plot(labels, good, markersize=3, marker = '*', linestyle='', color='green', label='good tweets')
+plt.plot(labels, bad, markersize=3, marker = '*', linestyle='', color='blue', label='bad tweets')
+plt.plot(labels, neutral, markersize=3, marker = '*', linestyle='', color='red', label='neutral tweets')
+plt.xticks(
+    rotation=45,
+    horizontalalignment='right',
+    fontweight='light',
+    fontsize='small'
+)
+plt.xlabel('Time intervals')
+plt.ylabel('Portions')
+plt.legend()
+plt.subplot2grid((3, 3), (2, 0), colspan=3)
 plt.bar(labels, count)
+plt.xticks(
+    rotation=45,
+    horizontalalignment='right',
+    fontweight='light',
+    fontsize='small'
+)
+plt.xlabel('Time intervals')
+plt.ylabel('Cumulative count')
 plt.show()
 
 print(str("{0:.2f}".format(time.time() - start)) + ' секунд.')
